@@ -93,7 +93,6 @@ $
 
     * quit - Exits the program (EOF will as well)
 
-
 ##### Alternative Syntax
 Users are able to issue a number of console command using an alternative syntax:
 
@@ -110,7 +109,6 @@ Advanced syntax is implemented for the following commands:
 
     * update - Updates existing attributes an object based on class name and UUID
 
-<br>
 <br>
 <center> <h2>Examples</h2> </center>
 <h3>Primary Command Syntax</h3>
@@ -187,5 +185,5 @@ Usage: <class_name>.update(<_id>, <dictionary>)
 <br>
 
 ## Authors
-Okpara Onyedikachi G
-Duff Iniobong
+- Caleb Ini. Duff
+- Okpara Onyedikachi G
