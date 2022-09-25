@@ -12,6 +12,11 @@ This is the first step towards building your first full web application: the **A
 - ```A comprehensive database to manage the backend functionalities```
 - ```An API that provides a communication interface between the front and backend of the system.```
 
+### For this project you will fork this [codebase:](https://github.com/justinmajetich/AirBnB_clone)
+- update the repository name to ``AirBnB_clone_v2``
+- update the ``README.md`` with your information but don’t delete the initial authors
+- If you are the owner of this repository, please create a new repository named ``AirBnB_clone_v2`` with the same content of ``AirBnB_clone``
+
 ### MySQL storage
 - replace the file storage by a Database storage
 - map your models to a table in database by using an O.R.M.
@@ -35,6 +40,7 @@ $ cat my_script.sql
 SELECT id, name FROM students WHERE batch_id = 3 ORDER BY created_at DESC LIMIT 3;
 $
 ```
+
 ### Resources
 **Read or watch:**
 - [cmd module](https://docs.python.org/3/library/cmd.html)
