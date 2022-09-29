@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-""" Place Module for HBNB project """
+"""This is the Place Module for AirBnB project"""
 from models.base_model import BaseModel, Base
 from sqlalchemy import Column, String, ForeignKey, Integer, Float, Table
 from sqlalchemy.orm import relationship, backref
@@ -18,7 +18,20 @@ if getenv("HBNB_TYPE_STORAGE") == "db":
 
 
 class Place(BaseModel, Base):
-    """ A place to stay """
+    """This is the Class for Place:  A place to stay 
+    Attributes:
+        city_id: city id
+        user_id: user id
+        name: name input
+        description: string of description
+        number_rooms: number of room in int
+        number_bathrooms: number of bathrooms in int
+        max_guest: maximum guest in int
+        price_by_night:: pice for a staying in int
+        latitude: latitude in flaot
+        longitude: longitude in float
+        amenity_ids: list of Amenity ids
+    """
     __tablename__ = 'places'
     city_id = Column(String(60), ForeignKey('cities.id', ondelete="CASCADE"),
                      nullable=False)
@@ -35,8 +48,8 @@ class Place(BaseModel, Base):
 
     if getenv("HBNB_TYPE_STORAGE") == "db":
         reviews = relationship("Review",
-                               cascade="all,delete",
-                               backref=backref("place", cascade="all,delete"),
+                               cascade="all, delete",
+                               backref=backref("place", cascade="all, delete"),
                                passive_deletes=True)
         amenities = relationship("Amenity", secondary="place_amenity",
                                  back_populates="place_amenities",
@@ -45,8 +58,10 @@ class Place(BaseModel, Base):
     else:
         @property
         def reviews(self):
-            """Return list of review instances for file storage
-            matching place_id
+            """Getter attribute in case of file storage
+            Return:
+                returns list of review instances for file storage
+                matching place_id
             """
             from models import storage
             return {k: v for k, v in storage.all().items()

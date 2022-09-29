@@ -7,7 +7,10 @@ from os import getenv
 
 
 class State(BaseModel, Base):
-    """ State class """
+    """This is the State Class
+    Attributes:
+        name: input name
+    """
     __tablename__ = "states"
     name = Column(String(128), nullable=False)
     cities = relationship(
@@ -20,8 +23,12 @@ class State(BaseModel, Base):
     if getenv("HBNB_TYPE_STORAGE") != "db":
         @property
         def cities(self):
-            """returns list of city instances"""
+            """Getter attribute in case of file storage-
+            returns list of city instances"""
             from models import storage
             from models.city import City
-            return [v for k, v in storage.all(City).items()
-                    if v.state_id == self.id]
+            list_city = []
+            for city in storage.all(City):
+                if self.id is city.state_id:
+                    list_city.append(city)
+            return list_city
