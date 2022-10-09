@@ -1,9 +1,7 @@
-#!/usr/bin/env python3
-""" Class Amenity """
-
+#!/usr/bin/python3
+""" State Module for HBNB project """
 from models.base_model import BaseModel
 
 
 class Amenity(BaseModel):
-    """ Class Amenity """
     name = ""
