@@ -1,72 +1,40 @@
 #!/usr/bin/python3
-"""A fabric script that generate a .tgz archive from the contents of
-the web_static folder ofr your AirBnB clone repo"""
+""" Function that compress a folder """
+from datetime import datetime
 from fabric.api import *
+import shlex
+import os
 
 
-env.hosts = ['44.200.63.37', '18.206.15.67']
-
-
-def do_pack():
-    """Generate the .tgz archive"""
-    from datetime import datetime
-    import os.path
-
-    d = datetime.now()
-
-    file_path = 'versions/web_static_{}{}{}{}{}{}.tgz'.format(
-            d.year, d.month, d.day, d.hour, d.minute, d.second)
-
-    if not os.path.exists('versions'):
-        os.mkdir('versions')
-
-    print('Packing web_static to ' + file_path)
-    r = local('tar  -cvzf {} {}'.format(file_path, 'web_static'))
-
-    if r.stderr:
-        return None
-
-    file_stats = os.stat(file_path)
-
-    print('web_static packed: {} -> {}Bytes'.format(
-        file_path, file_stats.st_size))
-
-    return os.path.realpath(file_path) if not r.stderr else None
+env.hosts = ['3.236.115.124', '3.227.233.5']
+env.user = "ubuntu"
 
 
 def do_deploy(archive_path):
-    """Deploy web_static archive on servers"""
-    import os.path
-
+    """ Deploys """
     if not os.path.exists(archive_path):
-        return None
-
-    # env.usernmae =
-    # env.password =
-    # env.key_filename =
-
-    remote_archive = '/tmp/' + os.path.basename(archive_path)
-
-    remote_to_xfolder = '/data/web_static/releases/'
-    remote_to_xfolder += os.path.splitext(os.path.basename(archive_path))[0]
-
-    # extract archive file to '/data/web_static/releases/<arch. file no ext.>
-    put(local_path=archive_path, remote_path=remote_archive)
-
-    r = sudo('mkdir -p {} && tar -xvf {} -C {}'.format(
-                remote_to_xfolder, remote_archive, remote_to_xfolder))
-    if r.stderr:
         return False
+    try:
+        name = archive_path.replace('/', ' ')
+        name = shlex.split(name)
+        name = name[-1]
 
-    # remote archive file
-    r = sudo('rm ' + remote_archive)
-    if r.stderr:
+        wname = name.replace('.', ' ')
+        wname = shlex.split(wname)
+        wname = wname[0]
+
+        releases_path = "/data/web_static/releases/{}/".format(wname)
+        tmp_path = "/tmp/{}".format(name)
+
+        put(archive_path, "/tmp/")
+        run("mkdir -p {}".format(releases_path))
+        run("tar -xzf {} -C {}".format(tmp_path, releases_path))
+        run("rm {}".format(tmp_path))
+        run("mv {}web_static/* {}".format(releases_path, releases_path))
+        run("rm -rf {}web_static".format(releases_path))
+        run("rm -rf /data/web_static/current")
+        run("ln -s {} /data/web_static/current".format(releases_path))
+        print("New version deployed!")
+        return True
+    except:
         return False
-
-    # update deploy symbolink link
-
-    sudo('rm -f /data/web_static/current')
-    sudo('ln -sf {} {}'.format(
-        remote_to_xfolder + '/web_static', '/data/web_static/current'))
-
-    return True
