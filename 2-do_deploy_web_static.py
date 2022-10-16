@@ -1,30 +1,42 @@
 #!/usr/bin/python3
 """
-Fabric script based on the file 1-pack_web_static.py that distributes an
-archive to the web servers
+    This script distributes an archive to your web servers,
+    using the function do_deploy:
 """
+from fabric.api import *
+import os
+import re
 
-from fabric.api import put, run, env
-from os.path import exists
+
+env.user = 'ubuntu'
 env.hosts = ['3.236.115.124', '3.227.233.5']
 
 
 def do_deploy(archive_path):
-    """distributes an archive to the web servers"""
-    if exists(archive_path) is False:
+    """
+        Deploys archive path to remote hosts
+    """
+    if not os.path.exists(archive_path):
         return False
+
     try:
-        file_n = archive_path.split("/")[-1]
-        no_ext = file_n.split(".")[0]
-        path = "/data/web_static/releases/"
-        put(archive_path, '/tmp/')
-        run('mkdir -p {}{}/'.format(path, no_ext))
-        run('tar -xzf /tmp/{} -C {}{}/'.format(file_n, path, no_ext))
-        run('rm /tmp/{}'.format(file_n))
-        run('mv {0}{1}/web_static/* {0}{1}/'.format(path, no_ext))
-        run('rm -rf {}{}/web_static'.format(path, no_ext))
-        run('rm -rf /data/web_static/current')
-        run('ln -s {}{}/ /data/web_static/current'.format(path, no_ext))
+        put(archive_path, "/tmp/")
+        regex = r'\/(\w+).tgz$'
+        pattern = re.findall(regex, archive_path)
+
+        web_path = "/data/web_static/releases/{}".format(pattern[0])
+
+        run("mkdir -p {}".format(web_path))
+        # unpacking
+        run("tar -xzf /tmp/{}.tgz -C {}".format(pattern[0], web_path))
+        run("mv {}/web_static/* {}".format(web_path, web_path))
+        run("rm -rf {}/web_static".format(web_path))
+        run("rm /tmp/{}.tgz".format(pattern[0]))
+        run("rm -rf /data/web_static/current")
+        run("ln -s {} /data/web_static/current".format(web_path))
+
+        # success
+        print("New version deployed!")
         return True
     except Exception:
         return False
