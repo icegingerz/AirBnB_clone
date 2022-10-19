@@ -4,20 +4,21 @@ import cmd
 import sys
 import re
 from models.base_model import BaseModel
-from models import storage
+from models.__init__ import storage
 from models.user import User
 from models.place import Place
 from models.state import State
 from models.city import City
 from models.amenity import Amenity
 from models.review import Review
+from sqlalchemy import Column, String
 
 
 class HBNBCommand(cmd.Cmd):
     """ Contains the functionality for the HBNB console"""
 
     # determines prompt for interactive/non-interactive modes
-    prompt = '(hbnb) '
+    prompt = '(hbnb) ' if sys.__stdin__.isatty() else ''
 
     classes = {
                'BaseModel': BaseModel, 'User': User, 'Place': Place,
@@ -31,8 +32,14 @@ class HBNBCommand(cmd.Cmd):
              'latitude': float, 'longitude': float
             }
 
+    def preloop(self):
+        """Prints if isatty is false"""
+        if not sys.__stdin__.isatty():
+            print('(hbnb)')
+
     def precmd(self, line):
         """Reformat command line for advanced command syntax.
+
         Usage: <class name>.<command>([<id> [<*args> or <**kwargs>]])
         (Brackets denote optional fields in usage example.)
         """
@@ -81,6 +88,12 @@ class HBNBCommand(cmd.Cmd):
         finally:
             return line
 
+    def postcmd(self, stop, line):
+        """Prints if isatty is false"""
+        if not sys.__stdin__.isatty():
+            print('(hbnb) ', end='')
+        return stop
+
     def do_quit(self, command):
         """ Method to exit the HBNB console"""
         exit()
@@ -104,54 +117,41 @@ class HBNBCommand(cmd.Cmd):
 
     def do_create(self, args):
         """ Create an object of any class"""
-        new = args.split(" ")
-        if not new:
+        pattern = """(^\w+)((?:\s+\w+=[^\s]+)+)?"""
+        m = re.match(pattern, args)
+        args = [s for s in m.groups() if s] if m else []
+
+        if not args:
             print("** class name missing **")
             return
-<<<<<<< HEAD
-        elif new[0] not in HBNBCommand.classes:
+
+        className = args[0]
+
+        if className not in HBNBCommand.classes:
             print("** class doesn't exist **")
             return
-        new_instance = HBNBCommand.classes[new[0]]()
 
-        for i in range(1, len(new)):
-            first = new[i].split("=")
-            try:
-                if first[1][0] == "\"":
-                    first[1] = first[1].replace("\"", "")
-                    first[1] = first[1].replace("_", " ")
-
-                elif "." in first[1]:
-                    first[1] = float(first[1])
-
-                else:
-                    first[1] = int(first[1])
-                setattr(new_instance, first[0], first[1])
-            except (Exception):
-                continue
-
-        new_instance.save()
-        print(new_instance.id)
-=======
-        my_list = args.split(" ")
-        if my_list[0] not in HBNBCommand.classes:
-            print("** class doesn't exist **")
-            return
-        new_instance = HBNBCommand.classes[my_list[0]]()
-        for arg_pair in my_list[1:]:
-            arg_pair = arg_pair.split('=', 1)
-            value = arg_pair[1]
-            if arg_pair[1][0] == '"':
-                value = value[1:-1].replace('_', ' ')
-            else:
-                if "." in value:
+        kwargs = dict()
+        if len(args) > 1:
+            params = args[1].split(" ")
+            params = [param for param in params if param]
+            for param in params:
+                [name, value] = param.split("=")
+                if value[0] == '"' and value[-1] == '"':
+                    value = value[1:-1].replace('_', ' ')
+                elif '.' in value:
                     value = float(value)
                 else:
                     value = int(value)
-            setattr(new_instance, arg_pair[0], value)
+                kwargs[name] = value
+
+        new_instance = HBNBCommand.classes[className]()
+        
+        for attrName, attrValue in kwargs.items():
+            setattr(new_instance, attrName, attrValue) 
+
         new_instance.save()
-        print("{}".format(new_instance.id))
->>>>>>> b464a7d914626ee00bf8b02af7c9bc565e71d45a
+        print(new_instance.id)
 
     def help_create(self):
         """ Help information for the create method """
@@ -180,10 +180,9 @@ class HBNBCommand(cmd.Cmd):
             print("** instance id missing **")
             return
 
-        objects = storage.all()
         key = c_name + "." + c_id
         try:
-            print(objects[key])
+            print(storage._FileStorage__objects[key])
         except KeyError:
             print("** no instance found **")
 
@@ -215,7 +214,7 @@ class HBNBCommand(cmd.Cmd):
         key = c_name + "." + c_id
 
         try:
-            del (storage.all()[key])
+            del(storage.all()[key])
             storage.save()
         except KeyError:
             print("** no instance found **")
@@ -227,26 +226,18 @@ class HBNBCommand(cmd.Cmd):
 
     def do_all(self, args):
         """ Shows all objects, or all objects of a class"""
-        objects = storage.all()
         print_list = []
+
         if args:
             args = args.split(' ')[0]  # remove possible trailing args
             if args not in HBNBCommand.classes:
                 print("** class doesn't exist **")
                 return
-<<<<<<< HEAD
             for k, v in storage.all().items():
                 if k.split('.')[0] == args:
                     print_list.append(str(v))
         else:
-            for k, v in storage.all().items():
-=======
-            for k, v in objects.items():
-                if k.split('.')[0] == args:
-                    print_list.append(str(v))
-        else:
-            for k, v in objects.items():
->>>>>>> b464a7d914626ee00bf8b02af7c9bc565e71d45a
+            for k, v in storage._FileStorage__objects.items():
                 print_list.append(str(v))
 
         print(print_list)
@@ -259,12 +250,7 @@ class HBNBCommand(cmd.Cmd):
     def do_count(self, args):
         """Count current number of class instances"""
         count = 0
-<<<<<<< HEAD
-        for k, v in storage.all().items():
-=======
-        objects = storage.all()
-        for k, v in objects.items():
->>>>>>> b464a7d914626ee00bf8b02af7c9bc565e71d45a
+        for k, v in storage._FileStorage__objects.items():
             if args == k.split('.')[0]:
                 count += 1
         print(count)
@@ -360,7 +346,6 @@ class HBNBCommand(cmd.Cmd):
         """ Help information for the update class """
         print("Updates an object with new information")
         print("Usage: update <className> <id> <attName> <attVal>\n")
-
 
 if __name__ == "__main__":
     HBNBCommand().cmdloop()
