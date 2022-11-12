@@ -1,82 +1,57 @@
 #!/usr/bin/python3
-"""A fabric script that generate a .tgz archive from the contents of
-the web_static folder ofr your AirBnB clone repo"""
+""" Creates and distributes an archive to web servers,
+using created function deploy and pack"""
 from fabric.api import *
+import os
+do_pack = __import__('1-pack_web_static').do_pack
+# do_deploy = __import__('2-do_deploy_web_static').do_deploy
 
-
-env.hosts = ['3.236.115.124', '3.227.233.5']
-
-
-def do_pack():
-    """Generate the .tgz archive"""
-    from datetime import datetime
-    import os.path
-
-    d = datetime.now()
-
-    file_path = 'versions/web_static_{}{}{}{}{}{}.tgz'.format(
-            d.year, d.month, d.day, d.hour, d.minute, d.second)
-
-    if not os.path.exists('versions'):
-        os.mkdir('versions')
-
-    print('Packing web_static to ' + file_path)
-    r = local('tar  -cvzf {} {}'.format(file_path, 'web_static'))
-
-    if r.stderr:
-        return None
-
-    file_stats = os.stat(file_path)
-
-    print('web_static packed: {} -> {}Bytes'.format(
-        file_path, file_stats.st_size))
-
-    return os.path.realpath(file_path) if not r.stderr else None
-
-
-def do_deploy(archive_path):
-    """Deploy web_static archive on servers"""
-    import os.path
-
-    if not os.path.exists(archive_path):
-        return None
-
-    # env.usernmae =
-    # env.password =
-    # env.key_filename =
-
-    remote_archive = '/tmp/' + os.path.basename(archive_path)
-
-    remote_to_xfolder = '/data/web_static/releases/'
-    remote_to_xfolder += os.path.splitext(os.path.basename(archive_path))[0]
-
-    # extract archive file to '/data/web_static/releases/<arch. file no ext.>
-    put(local_path=archive_path, remote_path=remote_archive)
-
-    r = sudo('mkdir -p {} && tar -xvf {} -C {}'.format(
-                remote_to_xfolder, remote_archive, remote_to_xfolder))
-    if r.stderr:
-        return False
-
-    # remote archive file
-    r = sudo('rm ' + remote_archive)
-    if r.stderr:
-        return False
-
-    # update deploy symbolink link
-
-    sudo('rm -f /data/web_static/current')
-    sudo('ln -sf {} {}'.format(
-        remote_to_xfolder + '/web_static', '/data/web_static/current'))
-
-    return True
+env.hosts = ['3.235.198.120', '3.239.50.204']
 
 
 def deploy():
-    """Create and distributes an archive to your web servers"""
-    archive_path = do_pack()
-
-    if not archive_path:
+    """Pack and deploy all file """
+    file_path = do_pack()
+    if not file_path:
         return False
 
-    return do_deploy(archive_path)
+    run_cmd = do_deploy(file_path)
+    return run_cmd
+
+
+def do_deploy(archive_path):
+    """Archive distributor"""
+    try:
+        try:
+            if os.path.exists(archive_path):
+                arc_tgz = archive_path.split("/")
+                arg_save = arc_tgz[1]
+                arc_tgz = arc_tgz[1].split('.')
+                arc_tgz = arc_tgz[0]
+
+                """Upload archive to the server"""
+                put(archive_path, '/tmp')
+
+                """Save folder paths in variables"""
+                uncomp_fold = '/data/web_static/releases/{}'.format(arc_tgz)
+                tmp_location = '/tmp/{}'.format(arg_save)
+
+                """Run remote commands on the server"""
+                run('mkdir -p {}'.format(uncomp_fold))
+                run('tar -xvzf {} -C {}'.format(tmp_location, uncomp_fold))
+                run('rm {}'.format(tmp_location))
+                run('mv {}/web_static/* {}'.format(uncomp_fold, uncomp_fold))
+                run('rm -rf {}/web_static'.format(uncomp_fold))
+                run('rm -rf /data/web_static/current')
+                run('ln -sf {} /data/web_static/current'.format(uncomp_fold))
+                run('sudo service nginx restart')
+                return True
+            else:
+                print('File does not exist')
+                return False
+        except Exception as err:
+            print(err)
+            return False
+    except Exception:
+        print('Error')
+        return False
