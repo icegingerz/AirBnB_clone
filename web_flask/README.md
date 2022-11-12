@@ -1,8 +1,7 @@
-<<<<<<< HEAD
 # 0x04. AirBnB clone - Web framework
 
 ### Task 0
-	- Files ( 0-hello_route.py init.py)
+- Files ( 0-hello_route.py init.py)
 <!-- Task Body -->
   <p>Write a script that starts a Flask web application:</p>
 
@@ -33,6 +32,3 @@
 </ul></li>
 <li>You must use the option <code>strict_slashes=False</code> in your route definition</li>
 </ul>
-=======
-Flask application
->>>>>>> 79d9bb2506d5c37457eac732697cc5dc79c1c83b
